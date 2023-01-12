@@ -11,6 +11,7 @@ from pwn import *
 from andctf import *
 import os 
 import random
+import time
 
 debug = False
 
@@ -41,7 +42,7 @@ def jamming_pattern()->bytearray:
     
     return pattern
 
-def jamming(ip: str, port: int):
+def jamming(ip: str, port: int,timeout:float):
     global debug
     
     print("[*] Initializing Jammer")
@@ -53,6 +54,8 @@ def jamming(ip: str, port: int):
         print("[*] Jamming Failed - Open Error: " + ip_to_team(ip) + " - " + port_to_chal(port))
         print()
         return
+
+    start = time.time()
 
     while True:
         p.sendline(jamming_pattern())
@@ -67,10 +70,12 @@ def jamming(ip: str, port: int):
         if idx % 0x200 == 0 and debug:
             print("[*] Jamming * "+str(idx)+"...")
             print(jamming_pattern())
-            sleep(2)
         
-        idx+=1
-        sleep(0.005)
+        sleep(1/jamming_speed)
+
+        if time.time()-start > timeout:
+            return
+
         
 
 
@@ -82,7 +87,7 @@ def main():
 
     ip = input("[*] ip: ")[:-1]
     port = int(input("[*] port: "))
-    jamming(ip,port)
+    jamming(ip,port,5)
 
 
 if __name__ == "__main__":
