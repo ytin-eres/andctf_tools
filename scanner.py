@@ -18,13 +18,13 @@ def print_result(success_map: dict, fail_list: list):
     os.system("clear")
 
     print("========== Sleeping Chals ==========")
+    for key in sorted(fail_list, key = lambda x: x[0]):
+        print(ip_to_team(key[0]) + " - " + port_to_chal(key[1]))
+
+    print("\n\n========== Alive Chals ==========")
     for key in sorted(success_map.keys(), key = lambda x: x[0]):
         print(ip_to_team(key[0]) + " - " + port_to_chal(key[1]))
 
-
-    print("========== Alive Chals ==========")
-    for key in sorted(fail_list, key = lambda x: x[0]):
-        print(ip_to_team(key[0]) + " - " + port_to_chal(key[1]))
 
 
 def scan():
@@ -59,9 +59,8 @@ def scan():
                         fail_list.append((ip, port))
                         change = True
 
-        sleep(0.7582)
-        if change:
-            print_result(socket_map,fail_list)  
+        print_result(socket_map,fail_list)  
+        sleep(5)
 
 def main():
     global debug 

